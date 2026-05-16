@@ -78,12 +78,37 @@ section:last-of-type { border-bottom: none; }
 .tag-anniversary { background: var(--gold); color: white; }
 .tag-dining { background: var(--burgundy); color: white; }
 .tag-info { background: var(--slate); color: white; }
-.activity h4 { font-size: 1rem; font-weight: 600; color: var(--navy); margin-bottom: 4px; }
-.activity .meta { font-size: 12px; color: var(--text-light); margin-bottom: 8px; display: flex; flex-wrap: wrap; gap: 4px 14px; }
-.activity p { font-size: 14px; color: var(--text); line-height: 1.6; }
-.activity .action { margin-top: 10px; padding: 8px 12px; background: var(--alert-bg); border: 1px solid #f5c6c6; border-radius: 3px; font-size: 13px; color: var(--alert-red); font-weight: 500; }
+.activity h4 { font-size: 1.05rem; font-weight: 600; color: var(--navy); margin-bottom: 4px; }
+.activity .meta { font-size: 13px; color: #3a3a3a; margin-bottom: 10px; display: flex; flex-wrap: wrap; gap: 4px 16px; font-weight: 500; }
+.activity p { font-size: 14px; color: var(--text); line-height: 1.65; }
+.activity .action { margin-top: 12px; padding: 12px 14px; background: #fff7f5; border: 1px solid #e8b8b8; border-left: 4px solid var(--alert-red); border-radius: 3px; font-size: 13.5px; color: #5e1020; font-weight: 600; line-height: 1.5; }
+.activity .action a { color: var(--alert-red); }
 .michelin { color: var(--gold); font-size: 12px; font-weight: 600; margin-bottom: 4px; }
-.booking-ref { display: inline-block; background: var(--navy); color: var(--gold); font-family: 'Courier New', monospace; font-size: 12px; padding: 2px 8px; border-radius: 3px; margin-top: 6px; }
+
+/* CONTACT / BOOKING REFERENCE — high-contrast */
+.booking-ref { display: inline-block; background: var(--navy); color: #ffffff; font-family: 'SF Mono', 'Courier New', monospace; font-size: 12.5px; padding: 5px 11px; border-radius: 3px; margin-top: 8px; letter-spacing: 0.3px; border-left: 3px solid var(--gold); }
+.booking-ref strong, .booking-ref .gold { color: var(--gold); }
+
+/* INLINE LINKS — universal in-content link style */
+.activity a:not(.action a), .restaurant-note a, .quick-info a, .transit-value a, .anniversary-moment a {
+  color: var(--burgundy);
+  text-decoration: none;
+  border-bottom: 1px dotted rgba(122,28,46,0.5);
+  font-weight: 500;
+  transition: color 0.15s, border-color 0.15s;
+}
+.activity a:hover, .restaurant-note a:hover, .quick-info a:hover, .transit-value a:hover, .anniversary-moment a:hover {
+  color: var(--gold);
+  border-bottom-color: var(--gold);
+}
+.confirmed a { color: var(--confirmed-green); border-bottom-color: rgba(46,107,58,0.5); }
+.confirmed a:hover { color: #1a4a25; border-bottom-color: #1a4a25; }
+.anniversary a { color: var(--burgundy); }
+
+/* CONTACT BLOCK — for prominent phone/email/address info */
+.contact-block { background: #fcfaf5; border: 1px solid #e8dfc8; border-left: 4px solid var(--gold); border-radius: 3px; padding: 12px 14px; margin-top: 10px; font-size: 13px; line-height: 1.7; }
+.contact-block .contact-label { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gold); font-weight: 700; margin-right: 6px; }
+.contact-block a { font-weight: 600; }
 
 /* ANNIVERSARY MOMENT */
 .anniversary-moment { background: linear-gradient(135deg, #fdf9f0 0%, #fef6e4 100%); border: 1px solid rgba(201,149,74,0.4); border-radius: 4px; padding: 22px 26px; margin: 24px 0; position: relative; }
@@ -99,10 +124,15 @@ section:last-of-type { border-bottom: none; }
 /* DINING */
 .dining-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
 .dining-card { background: white; border: 1px solid var(--border); border-radius: 4px; padding: 18px; border-top: 3px solid var(--burgundy); }
-.dining-card .restaurant-name { font-weight: 700; font-size: 1rem; color: var(--navy); margin-bottom: 4px; }
-.dining-card .restaurant-meta { font-size: 12px; color: var(--text-light); margin-bottom: 8px; }
-.dining-card .restaurant-note { font-size: 12px; color: var(--text); background: var(--cream); padding: 6px 10px; border-radius: 3px; margin-top: 8px; }
-.dining-card .restaurant-note.confirmed-note { background: var(--confirmed-bg); color: var(--confirmed-green); font-weight: 600; }
+.dining-card .restaurant-name { font-weight: 700; font-size: 1.05rem; color: var(--navy); margin-bottom: 4px; }
+.dining-card .restaurant-name a { color: var(--navy); text-decoration: none; border-bottom: 1px dotted var(--gold); }
+.dining-card .restaurant-name a:hover { color: var(--burgundy); border-bottom-color: var(--burgundy); }
+.dining-card .restaurant-meta { font-size: 13px; color: #3a3a3a; margin-bottom: 10px; font-weight: 500; }
+.dining-card .restaurant-note { font-size: 13px; color: var(--text); background: var(--cream); padding: 8px 12px; border-radius: 3px; margin-top: 10px; line-height: 1.5; }
+.dining-card .restaurant-note a { color: var(--burgundy); text-decoration: none; border-bottom: 1px dotted rgba(122,28,46,0.5); font-weight: 600; }
+.dining-card .restaurant-note a:hover { color: var(--gold); border-bottom-color: var(--gold); }
+.dining-card .restaurant-note.confirmed-note { background: var(--confirmed-bg); color: #1a4a25; font-weight: 600; }
+.dining-card .restaurant-note.confirmed-note a { color: #1a4a25; border-bottom-color: rgba(46,107,58,0.5); }
 
 /* TRANSIT */
 .transit-city { background: white; border: 1px solid var(--border); border-radius: 4px; margin-bottom: 20px; overflow: hidden; }
