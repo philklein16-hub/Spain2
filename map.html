@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Maps · Spain Anniversary Journey</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+  crossorigin=""/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+  crossorigin=""></script>
+<style>
+  :root {
+    --navy: #1a1f2e;
+    --navy-light: #252c3f;
+    --cream: #f5f0e8;
+    --cream-dark: #ede7d8;
+    --gold: #c9954a;
+    --gold-light: #d4a96a;
+    --burgundy: #7a1c2e;
+    --burgundy-light: #9b2437;
+    --olive: #4a6741;
+    --slate: #3a4a5c;
+    --confirmed-green: #2e6b3a;
+    --text: #2a2a2a;
+    --text-light: #555;
+    --border: #ddd5c4;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--cream);
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* HEADER */
+  .header {
+    background: var(--navy);
+    color: var(--cream);
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    border-bottom: 2px solid var(--gold);
+    flex-shrink: 0;
+  }
+  .header-title {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+  }
+  .header-title .gold-bullet {
+    color: var(--gold);
+    font-size: 14px;
+  }
+  .header-title h1 {
+    font-family: Georgia, serif;
+    font-size: 1.1rem;
+    font-weight: 400;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+  .header-title .sub {
+    font-size: 11px;
+    color: var(--gold-light);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+  .header a {
+    color: var(--gold);
+    text-decoration: none;
+    font-size: 12px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 6px 14px;
+    border: 1px solid rgba(201,149,74,0.4);
+    border-radius: 3px;
+    transition: all 0.2s;
+  }
+  .header a:hover {
+    background: rgba(201,149,74,0.1);
+    border-color: var(--gold);
+  }
+
+  /* CITY TABS */
+  .city-tabs {
+    background: var(--navy-light);
+    display: flex;
+    overflow-x: auto;
+    scrollbar-width: none;
+    flex-shrink: 0;
+    border-bottom: 1px solid rgba(201,149,74,0.3);
+  }
+  .city-tabs::-webkit-scrollbar { display: none; }
+  .city-tab {
+    color: rgba(245,240,232,0.6);
+    background: transparent;
+    border: none;
+    padding: 14px 22px;
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    white-space: nowrap;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s;
+    font-family: inherit;
+    font-weight: 500;
+  }
+  .city-tab:hover {
+    color: var(--gold-light);
+    background: rgba(201,149,74,0.05);
+  }
+  .city-tab.active {
+    color: var(--gold);
+    border-bottom-color: var(--gold);
+    background: rgba(201,149,74,0.08);
+  }
+  .city-tab .dates {
+    display: block;
+    font-size: 10px;
+    color: rgba(201,149,74,0.6);
+    letter-spacing: 1px;
+    margin-top: 2px;
+    font-weight: 400;
+  }
+
+  /* MAP AREA */
+  .map-container {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+  }
+  #map {
+    width: 100%;
+    height: 100%;
+  }
+
+  /* CUSTOM MARKERS */
+  .marker-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    border: 2px solid white;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+  .marker-icon:hover { transform: rotate(-45deg) scale(1.1); }
+  .marker-icon span { transform: rotate(45deg); display: block; line-height: 1; }
+  .marker-hotel { background: var(--gold); }
+  .marker-confirmed { background: var(--confirmed-green); }
+  .marker-restaurant { background: var(--burgundy); }
+  .marker-site { background: var(--navy); }
+  .marker-transit { background: var(--slate); }
+  .marker-experience { background: #6b4ba0; }
+
+  /* POPUPS */
+  .leaflet-popup-content-wrapper {
+    background: var(--cream);
+    border-radius: 4px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    padding: 0;
+  }
+  .leaflet-popup-content {
+    margin: 0;
+    width: 280px !important;
+    font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  }
+  .leaflet-popup-tip { background: var(--cream); }
+
+  .popup {
+    padding: 14px 16px;
+  }
+  .popup-tag {
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 2px;
+    color: white;
+    display: inline-block;
+    margin-bottom: 8px;
+  }
+  .tag-hotel { background: var(--gold); }
+  .tag-confirmed { background: var(--confirmed-green); }
+  .tag-restaurant { background: var(--burgundy); }
+  .tag-site { background: var(--navy); }
+  .tag-transit { background: var(--slate); }
+  .tag-experience { background: #6b4ba0; }
+
+  .popup h3 {
+    font-family: Georgia, serif;
+    font-size: 15px;
+    color: var(--navy);
+    margin-bottom: 4px;
+    font-weight: 600;
+  }
+  .popup .address {
+    font-size: 12px;
+    color: var(--text-light);
+    margin-bottom: 8px;
+  }
+  .popup .meta {
+    font-size: 11px;
+    color: var(--burgundy);
+    margin-bottom: 6px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .popup .notes {
+    font-size: 12px;
+    color: var(--text);
+    line-height: 1.5;
+    margin-bottom: 10px;
+  }
+  .popup .conf-code {
+    background: var(--navy);
+    color: var(--gold);
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    display: inline-block;
+    margin-bottom: 8px;
+  }
+  .popup .actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+  .popup .actions a {
+    flex: 1;
+    text-align: center;
+    background: var(--navy);
+    color: var(--gold);
+    text-decoration: none;
+    font-size: 11px;
+    padding: 6px 8px;
+    border-radius: 3px;
+    letter-spacing: 0.5px;
+    transition: background 0.2s;
+    white-space: nowrap;
+  }
+  .popup .actions a:hover { background: var(--navy-light); }
+  .popup .actions a.primary {
+    background: var(--gold);
+    color: var(--navy);
+    font-weight: 600;
+  }
+  .popup .actions a.primary:hover { background: var(--gold-light); }
+
+  /* LEGEND */
+  .legend {
+    position: absolute;
+    bottom: 24px;
+    right: 16px;
+    background: rgba(245,240,232,0.96);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 12px 14px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    font-size: 12px;
+    z-index: 500;
+    backdrop-filter: blur(4px);
+    max-width: 200px;
+  }
+  .legend-title {
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: var(--navy);
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 2px;
+    transition: background 0.15s;
+  }
+  .legend-item:hover { background: rgba(201,149,74,0.1); }
+  .legend-item.disabled { opacity: 0.35; }
+  .legend-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    border: 1.5px solid white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .legend-dot.hotel { background: var(--gold); }
+  .legend-dot.confirmed { background: var(--confirmed-green); }
+  .legend-dot.restaurant { background: var(--burgundy); }
+  .legend-dot.site { background: var(--navy); }
+  .legend-dot.transit { background: var(--slate); }
+  .legend-dot.experience { background: #6b4ba0; }
+  .legend-count {
+    margin-left: auto;
+    font-size: 10px;
+    color: var(--text-light);
+    background: var(--cream-dark);
+    padding: 1px 6px;
+    border-radius: 8px;
+  }
+
+  /* CITY INFO PILL */
+  .city-info {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    background: var(--navy);
+    color: var(--cream);
+    padding: 10px 16px;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    z-index: 500;
+    font-size: 13px;
+    max-width: 300px;
+    border-left: 3px solid var(--gold);
+  }
+  .city-info .name {
+    font-family: Georgia, serif;
+    font-size: 16px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+  }
+  .city-info .hotel-line {
+    font-size: 11px;
+    color: var(--gold-light);
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 600px) {
+    .city-tab { padding: 10px 14px; font-size: 11px; }
+    .city-tab .dates { font-size: 9px; }
+    .legend { font-size: 11px; padding: 10px; bottom: 12px; right: 8px; }
+    .city-info { font-size: 12px; padding: 8px 12px; max-width: 220px; top: 8px; left: 8px; }
+    .header-title h1 { font-size: 0.95rem; }
+    .header-title .sub { display: none; }
+    .leaflet-popup-content { width: 240px !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-title">
+    <span class="gold-bullet">✦</span>
+    <h1>Spain Trip Maps</h1>
+    <span class="sub">Phil &amp; Sarah · 2026</span>
+  </div>
+  <a href="index.html">← Itinerary</a>
+</div>
+
+<div class="city-tabs" id="cityTabs"></div>
+
+<div class="map-container">
+  <div class="city-info" id="cityInfo"></div>
+  <div id="map"></div>
+  <div class="legend" id="legend">
+    <div class="legend-title">Click to filter</div>
+    <div class="legend-item" data-type="hotel"><span class="legend-dot hotel"></span> Hotel <span class="legend-count" id="count-hotel">0</span></div>
+    <div class="legend-item" data-type="confirmed"><span class="legend-dot confirmed"></span> Confirmed booking <span class="legend-count" id="count-confirmed">0</span></div>
+    <div class="legend-item" data-type="restaurant"><span class="legend-dot restaurant"></span> Restaurant <span class="legend-count" id="count-restaurant">0</span></div>
+    <div class="legend-item" data-type="site"><span class="legend-dot site"></span> Site / Attraction <span class="legend-count" id="count-site">0</span></div>
+    <div class="legend-item" data-type="experience"><span class="legend-dot experience"></span> Experience <span class="legend-count" id="count-experience">0</span></div>
+    <div class="legend-item" data-type="transit"><span class="legend-dot transit"></span> Transit <span class="legend-count" id="count-transit">0</span></div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// CITY DATA
+// ============================================================
+const cities = {
+  madrid: {
+    name: 'Madrid',
+    dates: 'Jul 26–30 · 4 nights',
+    hotel: 'JW Marriott Hotel Madrid',
+    center: [40.4168, -3.6988],
+    zoom: 14,
+    locations: [
+      { type: 'hotel', name: 'JW Marriott Hotel Madrid', coords: [40.4168, -3.6988],
+        address: 'Calle de Sevilla 2, 28014 Madrid', meta: 'Booking #84272177 · €2,106.72 · Check-in 3pm Jul 26',
+        notes: 'Request Cava and rose petals for anniversary. Marriott Bonvoy Platinum may upgrade to balcony suite.',
+        conf: '#84272177' },
+      { type: 'confirmed', name: 'Royal Palace Tour — Meeting Point', coords: [40.4181, -3.7138],
+        address: 'Madrid Souvenirs, Calle de Carlos III 1', meta: 'Mon Jul 27 · 10:31 AM · $100.82 paid',
+        notes: 'Skip-the-line guided tour. Mobile ticket. Largest royal palace in Western Europe — 2–2.5 hours.',
+        conf: '#1749507469' },
+      { type: 'site', name: 'Royal Palace (Palacio Real)', coords: [40.4178, -3.7144],
+        address: 'Calle de Bailén', meta: 'Largest royal palace in Western Europe',
+        notes: 'Throne Room, Royal Armoury, Royal Chapel, state apartments.' },
+      { type: 'site', name: 'Museo del Prado', coords: [40.4138, -3.6921],
+        address: 'Paseo del Prado', meta: 'Mon Jul 27 · 4:30 PM · €15pp',
+        notes: 'Velázquez Las Meninas, Goya Black Paintings, El Greco room. Open until 8pm. Book at museodelprado.es.' },
+      { type: 'site', name: 'Museo Reina Sofía — Guernica', coords: [40.4086, -3.6943],
+        address: 'Calle de Santa Isabel 52', meta: 'Wed Jul 29 · 10:00 AM · €12pp (free 7–9pm)',
+        notes: "Picasso's Guernica on Floor 2. Closed Tuesdays. Photography forbidden in Guernica room." },
+      { type: 'site', name: 'El Retiro Park', coords: [40.4153, -3.6843],
+        address: 'Plaza de la Independencia', meta: 'Mornings & evenings (avoid midday heat)',
+        notes: 'Rowboats on the lake, Crystal Palace, rose gardens.' },
+      { type: 'confirmed', name: 'Juana La Loca — Dinner', coords: [40.4225, -3.6881],
+        address: 'Calle de Recoletos 10, Salamanca', meta: 'Tue Jul 28 · 8:15 PM · 2 guests',
+        notes: 'Reservation confirmed via Covermanager. Table held until 9:45 PM — arrive promptly. Sweet onion tortilla, grilled artichokes.',
+        conf: 'Phil Klein · 8:15 PM' },
+      { type: 'restaurant', name: 'El Triciclo — Anniversary Dinner', coords: [40.4122, -3.6952],
+        address: 'Calle de Santa María 28, Huertas', meta: 'Wed Jul 29 · ★ Michelin Bib Gourmand · €60–€80pp',
+        notes: 'Anniversary dinner — book at eltriciclo.es or +34 910 244 798. Mention 20th anniversary and vegetarian. Closed Mondays — booked for Wed Jul 29.' },
+      { type: 'restaurant', name: 'Lateral — Gran Vía', coords: [40.4202, -3.7066],
+        address: 'Gran Vía 57', meta: 'Sun Jul 26 · €35–€50/couple · No reservations',
+        notes: 'Arrival night dinner. Modern Spanish tapas. Open Sundays 12pm–12am.' },
+      { type: 'restaurant', name: 'Taberna Txakolina (La Latina)', coords: [40.4118, -3.7093],
+        address: 'Calle Cava Baja 26', meta: 'Mon Jul 27 · 7:00 PM tapas crawl',
+        notes: "Start of the La Latina bar crawl. Order pintxos, then work down Calle Cava Baja." },
+      { type: 'restaurant', name: 'Loca Obsesión — Specialty Coffee', coords: [40.4173, -3.7002],
+        address: '2-min walk from JW Marriott', meta: 'Sun Jul 26 morning · ~€20',
+        notes: "Pistachio lattes, vegan French toast. Madrid's finest specialty café — perfect gentle start." },
+      { type: 'transit', name: 'Madrid Puerta de Atocha', coords: [40.4067, -3.6907],
+        address: 'Plaza del Emperador Carlos V', meta: 'Toledo & Granada trains depart here',
+        notes: 'AVE to Toledo (Jul 28, 09:00). AVE to Granada (Jul 30, 13:35). 15-min walk or short taxi from JW Marriott.' }
+    ]
+  },
+
+  toledo: {
+    name: 'Toledo',
+    dates: 'Jul 28 · Day trip',
+    hotel: 'Day trip from Madrid',
+    center: [39.8580, -4.0228],
+    zoom: 15,
+    locations: [
+      { type: 'transit', name: 'Toledo Station', coords: [39.8631, -4.0210],
+        address: 'Paseo de la Rosa', meta: 'AVE from Madrid Atocha · 33 min',
+        notes: 'Arrive 09:33. Return train 16:30. Bus C5 to old town (8 min, €1.40) or taxi (~€5–7).' },
+      { type: 'site', name: 'Plaza de Zocodover', coords: [39.8587, -4.0227],
+        address: 'Toledo Old Town', meta: 'Main square — bus C5 terminus',
+        notes: 'Heart of Toledo old town. All sights within 10-min walk.' },
+      { type: 'experience', name: 'Toledo Cathedral', coords: [39.8576, -4.0222],
+        address: 'Calle Cardenal Cisneros', meta: 'Private art historian tour · €200–€280/couple',
+        notes: 'Book via magicalspain.com or contexttravel.com. Specialist who unlocks Sacristy and explains El Greco as living theology.' },
+      { type: 'restaurant', name: 'Alfileritos 24 — Lunch', coords: [39.8585, -4.0240],
+        address: 'Calle Alfileritos 24', meta: '★ Castilian tapas · €35–€55/couple',
+        notes: 'Beloved Toledo local favourite. Open daily 10:30am–11:30pm. Artichoke tapas, grilled fresh fish. Book: alfileritos.com' },
+      { type: 'restaurant', name: 'El Peñón — Afternoon Tapas', coords: [39.8558, -4.0257],
+        address: 'Calle Carrera 31', meta: '3:30 PM · €20–€30/couple · Near train',
+        notes: 'Arrive by 3:30pm — gets fully booked. Closed Sundays. Perfect before 16:30 return train. Salmorejo is always excellent.' }
+    ]
+  },
+
+  granada: {
+    name: 'Granada',
+    dates: 'Jul 30 – Aug 1 · 2 nights',
+    hotel: 'Palacio de Santa Paula',
+    center: [37.1778, -3.5945],
+    zoom: 15,
+    locations: [
+      { type: 'hotel', name: 'Palacio de Santa Paula', coords: [37.1773, -3.5986],
+        address: 'Gran Vía de Colón 31', meta: 'Booking #87632000 · €618.20 · Check-in 3pm Jul 30',
+        notes: 'Stunning cloister. 5-min walk to Plaza Nueva and Granada Cathedral.',
+        conf: '#87632000' },
+      { type: 'confirmed', name: 'Alhambra — Nasrid Palaces Entry', coords: [37.1773, -3.5882],
+        address: 'Calle Real de la Alhambra s/n', meta: 'Fri Jul 31 · 08:30 AM SHARP · €133.80 paid',
+        notes: 'BINDING entry time — cannot be changed. Arrive 10 min early with photo ID. Submit attendee names + passport numbers to Feel the City Tours immediately. NON-REFUNDABLE.',
+        conf: '#3690261897' },
+      { type: 'site', name: 'Alhambra — Generalife & Gardens', coords: [37.1763, -3.5851],
+        address: 'East side of Alhambra complex', meta: 'Free with same ticket',
+        notes: 'Alcazaba fortress, Partal gardens, Generalife — visit freely during opening hours on the same Alhambra ticket.' },
+      { type: 'experience', name: 'Hammam Al Ándalus', coords: [37.1772, -3.5959],
+        address: 'Calle Santa Ana 16', meta: 'Thu Jul 30 afternoon · €120–€180/couple',
+        notes: 'PRIVATE circuit for two: 90 min of hot and cold pools, steam room, aromatherapy massage. Book at granada.hammamalandalus.com — private circuit, not shared.' },
+      { type: 'confirmed', name: 'Carmen Mirador de Aixa — Dinner', coords: [37.1793, -3.5935],
+        address: 'Carril de San Agustín 2, Albaicín', meta: 'Thu Jul 30 · 9:00 PM · 2 guests',
+        notes: 'Reservation confirmed via Covermanager. Rooftop terrace over Alhambra. Take taxi (~€7) — uphill walk is 20 min. Request terrace table on arrival.',
+        conf: 'Phil Klein · 9:00 PM' },
+      { type: 'restaurant', name: 'Taberna Bulanico — Lunch', coords: [37.1769, -3.5996],
+        address: 'Plaza Pescadería 15', meta: 'Fri Jul 31 lunch · €60–€80/couple',
+        notes: "Granada's finest tapas (4.9 stars). Wed–Sat & Sun · closed Mon/Tue. Tuna tataki, aubergine with honey, octopus on potato purée. Book: tabernabulanico.com" },
+      { type: 'confirmed', name: 'Albaicín Sunset Tour — Meeting', coords: [37.1777, -3.5982],
+        address: 'Plaza Nueva, next to fountain', meta: 'Fri Jul 31 · 8:00 PM · $35.24 paid',
+        notes: "Look for the PINK UMBRELLA. Arrive by 7:50 PM — tour leaves without late arrivals. 2 hours to Mirador de San Nicolás and Sacromonte.",
+        conf: 'GYG48YR5ZA65' },
+      { type: 'site', name: 'Mirador de San Nicolás', coords: [37.1796, -3.5940],
+        address: 'Albaicín neighbourhood', meta: 'Iconic Granada sunset viewpoint',
+        notes: 'The golden light on the Alhambra from this mirador at sunset is the defining Granada moment.' },
+      { type: 'site', name: 'Granada Cathedral & Alcaicería', coords: [37.1764, -3.5996],
+        address: 'Calle Gran Vía de Colón 5', meta: 'Sat Aug 1 morning walk',
+        notes: 'Cathedral quarter + Alcaicería silk bazaar — atmospheric early in the cool of morning.' },
+      { type: 'transit', name: 'Granada Train Station', coords: [37.1853, -3.6098],
+        address: 'Avenida Andaluces', meta: 'Train to Seville Sat Aug 1 (13:00–14:00)',
+        notes: '~2h 43m journey to Seville. Taxi from hotel ~€7.' }
+    ]
+  },
+
+  sevilla: {
+    name: 'Sevilla',
+    dates: 'Aug 1 – 4 · 3 nights',
+    hotel: 'Hotel Alfonso XIII',
+    center: [37.3850, -5.9935],
+    zoom: 15,
+    locations: [
+      { type: 'hotel', name: 'Hotel Alfonso XIII — Luxury Collection', coords: [37.3823, -5.9960],
+        address: 'Calle San Fernando 2', meta: 'Booking #84275182 · €1,622.38 · Check-in 3pm Aug 1',
+        notes: 'Grandest hotel in Andalusia — former royal palace. Ask concierge to arrange private sherry tasting in Moorish courtyard.',
+        conf: '#84275182' },
+      { type: 'experience', name: 'Private Sherry Tasting — Hotel Courtyard', coords: [37.3823, -5.9960],
+        address: 'Hotel Alfonso XIII courtyard', meta: 'Sat Aug 1 evening · €80–€120/couple',
+        notes: 'Arrange through concierge: private fino and manzanilla tasting paired with jamón ibérico and local cheeses.' },
+      { type: 'site', name: 'Seville Cathedral & Giralda', coords: [37.3858, -5.9931],
+        address: 'Avenida de la Constitución', meta: "World's largest Gothic cathedral · €12–€15pp",
+        notes: 'Climb the Giralda (ramp, not stairs) for panoramic views. Columbus tomb inside. Book: catedraldesevilla.es' },
+      { type: 'site', name: 'Royal Alcázar', coords: [37.3839, -5.9918],
+        address: 'Patio de Banderas', meta: 'UNESCO Mudéjar palace · €14.50pp',
+        notes: 'Still used by Spanish royal family. Book well ahead — sells out summer. Gardens with peacocks, Mudéjar rooms, Upper Royal Apartments. Allow 2.5 hours.' },
+      { type: 'confirmed', name: 'Cathedral/Alcázar Tour — Meeting Point', coords: [37.3858, -5.9931],
+        address: "Plaza del Triunfo, next to 'La Inmaculada Concepción' monument", meta: 'Mon Aug 3 · 10:00 AM · $163.08 paid',
+        notes: 'Arrive by 9:30 AM. Look for guide in PURPLE Crown Tours t-shirt. 150 min: Cathedral + Giralda + Alcázar. Dress code: no sleeveless, no short skirts, no sandals.',
+        conf: 'GYG32L682KZ6' },
+      { type: 'experience', name: 'La Casa del Flamenco — 9 PM Show', coords: [37.3846, -5.9899],
+        address: 'Calle Ximénez de Enciso 28, Barrio Santa Cruz', meta: 'Sun Aug 2 · 9:00 PM · €24pp (front row upgrade available)',
+        notes: '15th-century Andalusian courtyard. Book the 9pm show. Upgrade to front row. Book: lacasadelflamenco.es' },
+      { type: 'restaurant', name: 'Bar Alfalfa — Early Tapas', coords: [37.3870, -5.9904],
+        address: 'Calle Candilejo 1, Barrio Santa Cruz', meta: 'Sun Aug 2 · 7:00 PM · €25–€35/couple',
+        notes: 'Iconic Santa Cruz tapas bar. Arrive before 7:30pm. Daily 9am–12am. Pesto bruschetta, Manchego, salmorejo. Stand at the bar like a local.' },
+      { type: 'restaurant', name: 'Az-Zait — Dinner', coords: [37.3897, -5.9968],
+        address: 'Calle San Hermenegildo 18, Casco Antiguo', meta: 'Sat Aug 1 dinner · €45–€65pp',
+        notes: 'Modern Andalusian bistro. Tue–Sun · closed Mon. Very popular — book ahead at azzaitsevilla.com. Daily grilled fish, gazpacho, salmorejo.' },
+      { type: 'restaurant', name: 'Las Teresas — Farewell Dinner', coords: [37.3853, -5.9906],
+        address: 'Calle Santa Teresa 2, Barrio Santa Cruz', meta: 'Mon Aug 3 farewell · €30–€45/couple',
+        notes: "If you only have time for one tapas bar in Seville, make it this. Daily 9am–12am. No reservations. Order espinacas con garbanzos — one of the great Sevillian vegetarian tapas." },
+      { type: 'transit', name: 'Santa Justa Station', coords: [37.3919, -5.9755],
+        address: 'Avenida Kansas City', meta: 'Train to Barcelona Tue Aug 4 at 08:37',
+        notes: 'Renfe AVE 03943, Carriage 23, Seats 3B (Phil) & 3C (Sarah). Arrive Barcelona Sants 14:54. Taxi from Alfonso XIII ~€10, 12 min. Leave at 07:15.' }
+    ]
+  },
+
+  barcelona: {
+    name: 'Barcelona',
+    dates: 'Aug 4 – 9 · 5 nights',
+    hotel: 'Cotton House Hotel',
+    center: [41.3920, 2.1680],
+    zoom: 13,
+    locations: [
+      { type: 'hotel', name: 'Cotton House Hotel — Autograph Collection', coords: [41.3907, 2.1626],
+        address: 'Gran Via de les Corts Catalanes 670', meta: 'Booking #93055760 · €2,303.13 · Check-in 3pm Aug 4',
+        notes: 'On Passeig de Gràcia (L3). Brief concierge about anniversary for room surprise.',
+        conf: '#93055760' },
+      { type: 'confirmed', name: 'Park Güell Tour — Meeting Point', coords: [41.4145, 2.1527],
+        address: 'Ctra. del Carmel 23, Horta-Guinardó', meta: 'Wed Aug 5 · 9:30 AM · $70.50 paid',
+        notes: "Look for 'Golden Tour Guide' sign. Arrive by 9:15 AM — LATE ARRIVALS CANNOT ENTER. 75 min, skip-the-line. Cannot enter Park Güell without guide.",
+        conf: 'GYGFWV8KAABH' },
+      { type: 'confirmed', name: 'Sagrada Família Tour — Meeting Point', coords: [41.4044, 2.1740],
+        address: "Plaça de Gaudí, near children's playground", meta: 'Wed Aug 5 · 5:30 PM · $187.96 paid',
+        notes: 'Look for guide in PURPLE Crown Tours jacket near the stairs. Arrive 5:00 PM (30 min early). Dress code: knees AND shoulders covered.',
+        conf: 'GYG48YR6G5X9' },
+      { type: 'confirmed', name: 'Tapas Walking Tour — Meeting', coords: [41.3815, 2.1738],
+        address: "Travel Bar, Carrer de la Boqueria 27 (black sign, 'Travel' in yellow)", meta: 'Tue Aug 4 · 7:00 PM · $155.10 paid',
+        notes: '3 hours through Gothic Quarter with food at 4 stops. Arrive by 6:45 PM. Ends at Pg. de Colom 7. Max 16 people. Contact: +34 932 49 41 23.',
+        conf: 'GYGZGZ3G32AN' },
+      { type: 'site', name: 'Sagrada Família', coords: [41.4036, 2.1744],
+        address: "Carrer de Mallorca 401", meta: "Gaudí's masterpiece",
+        notes: 'Tour at 5:30 PM Wed Aug 5. Stained-glass light is extraordinary in late afternoon.' },
+      { type: 'site', name: 'Park Güell', coords: [41.4145, 2.1527],
+        address: "Carrer d'Olot", meta: "Gaudí mosaic terraces · Hill walk",
+        notes: 'Wear comfortable shoes, hat, sunscreen. Free outer sections accessible without ticket Aug 8 morning.' },
+      { type: 'site', name: 'Casa Batlló — Magic Nights', coords: [41.3917, 2.1649],
+        address: 'Passeig de Gràcia 43', meta: 'Fri Aug 7 evening · €60–€80pp',
+        notes: 'Book Magic Nights immersive experience at golden hour with champagne. Sells out in August — book early at casabatllo.es' },
+      { type: 'site', name: 'Museu Picasso', coords: [41.3851, 2.1810],
+        address: "Carrer de Montcada 15-23, El Born", meta: 'Wed Aug 5 · 2:00 PM · €14pp',
+        notes: '4,200 works. Las Meninas series is extraordinary. Five connected medieval palaces. Air-conditioned. Book: museupicasso.bcn.cat' },
+      { type: 'site', name: 'La Boqueria Market', coords: [41.3819, 2.1716],
+        address: 'La Rambla 91', meta: 'Wed Aug 5 · 11:30 AM light lunch',
+        notes: 'Oysters, fresh fruit, grilled fish at the counters.' },
+      { type: 'site', name: 'Barceloneta Beach', coords: [41.3784, 2.1925],
+        address: 'Passeig Marítim', meta: 'Sat Aug 8 · 10:30 AM stroll',
+        notes: '20-min walk from Cotton House. Palm-lined promenade. Chiringuito coffee. Walk to Port Olímpic.' },
+      { type: 'experience', name: 'Bunkers del Carmel — Golden Hour', coords: [41.4187, 2.1599],
+        address: 'Carrer de Marià Labèrnia', meta: 'Sat Aug 8 · 8:20 PM · ~€30 Cava from concierge',
+        notes: 'Old civil war anti-aircraft batteries. 360° panoramic view of Barcelona. The perfect final image of the trip.' },
+      { type: 'experience', name: 'Private Gothic Quarter Tour', coords: [41.3833, 2.1762],
+        address: 'Runner Bean Tours · Gothic Quarter', meta: 'Fri Aug 7 · 8:30 PM · €150–€200/couple',
+        notes: 'Private 2.5-hour tour for two. Book at runnerbeantours.com/private. Request guide Lowri or Ann-Marie.' },
+      { type: 'restaurant', name: 'Petit Comité — Anniversary Dinner', coords: [41.3915, 2.1626],
+        address: 'Passatge de la Concepció 13, Eixample', meta: 'Thu Aug 6 · ★ Anniversary dinner · €70–€100pp',
+        notes: 'Refined Catalan-French, intimate, candlelit courtyard. 3-min walk from Cotton House. Mon–Sat · closed Sun. Reserve courtyard table. Book: petitcomite.cat' },
+      { type: 'restaurant', name: 'Teresa Carles — Farewell', coords: [41.3897, 2.1672],
+        address: 'Carrer de Jovellanos 2, Eixample', meta: 'Sat Aug 8 farewell · €50–€70pp',
+        notes: 'Celebrated 25+ year vegetarian institution. Open daily 9am–11:30pm. Full vegetarian menu — perfect for Sarah. Book: teresacarles.com' },
+      { type: 'restaurant', name: 'Sésamo', coords: [41.3797, 2.1622],
+        address: 'Carrer de Sant Antoni Abat 52, El Raval', meta: 'Wed Aug 5 (or Aug 7) dinner · €40–€60pp',
+        notes: 'Beloved vegetarian bistro. Wed–Mon · closed Tuesday. Small and cosy — book ahead at restaurantsesamo.com' },
+      { type: 'restaurant', name: 'Colom Restaurant — Best Paella', coords: [41.3798, 2.1764],
+        address: 'Carrer dels Escudellers 33, Gothic Quarter', meta: 'Tue Aug 4 dinner · €50–€70/couple',
+        notes: "Catalan seafood — Barcelona's finest paella. Daily 12:30pm–12am. Walk-in or short wait. Book: colom.cat" },
+      { type: 'restaurant', name: 'El Xampanyet', coords: [41.3849, 2.1813],
+        address: 'Carrer de Montcada 22, El Born', meta: 'Sat Aug 8 · 1:30 PM · €25–€35/couple',
+        notes: 'Old-school cava bar. Tue–Sat & Sun lunch · closed Monday. No reservations — arrive at opening. House cava is legendary.' },
+      { type: 'restaurant', name: 'Cal Pep — Seafood Counter', coords: [41.3842, 2.1827],
+        address: 'Plaça de les Olles 8, El Born', meta: 'Fri Aug 7 · 6:30 PM · €40–€60/couple',
+        notes: 'Most celebrated seafood tapas bar. No reservations for bar — queue at 6:30pm on the dot. Closed Sunday. Chef cooks in front of you.' },
+      { type: 'restaurant', name: 'Carrer de Blai — Pintxos Crawl', coords: [41.3742, 2.1645],
+        address: 'Carrer de Blai, Poble Sec', meta: 'Wed Aug 5 · 7:15 PM · €25–€40/couple',
+        notes: 'Pedestrian street of pintxos bars. Pick bites at the counter, pay by toothpick. Vegetarian-friendly throughout.' },
+      { type: 'transit', name: 'Barcelona Sants Station', coords: [41.3795, 2.1402],
+        address: "Plaça dels Països Catalans", meta: 'Train arrivals + Girona day trip',
+        notes: 'Arrive from Seville Aug 4 at 14:54. Girona Rodalies regional trains depart upstairs (NOT the metro station).' },
+      { type: 'transit', name: 'Barcelona El Prat Airport (BCN)', coords: [41.2974, 2.0833],
+        address: 'Terminal 1', meta: 'Sun Aug 9 · 10:55 AM Delta DL0129 home',
+        notes: "Blacklane pickup 7:00 AM from Cotton House. Sala VIP Joan Miró lounge (Amex Priority Pass) after Passport Control. Confirmation JQP7XE." }
+    ]
+  },
+
+  girona: {
+    name: 'Girona',
+    dates: 'Aug 6 · Day trip',
+    hotel: 'Day trip from Barcelona',
+    center: [41.9858, 2.8245],
+    zoom: 16,
+    locations: [
+      { type: 'transit', name: 'Girona Station', coords: [41.9794, 2.8211],
+        address: 'Plaça d\'Espanya', meta: 'Rodalies from Barcelona Sants · ~38 min',
+        notes: 'Walk to Cathedral (10 min) across painted bridges. ~€8–12 one way. Buy at Sants machines.' },
+      { type: 'site', name: 'Girona Cathedral', coords: [41.9874, 2.8253],
+        address: 'Plaça de la Catedral', meta: 'Self-guided · Medieval old town',
+        notes: 'Centerpiece of Girona old town. Climb the 90 steps for views.' },
+      { type: 'site', name: 'Jewish Quarter (El Call)', coords: [41.9866, 2.8242],
+        address: 'Carrer de la Força', meta: "One of Europe's best-preserved Jewish quarters",
+        notes: 'Walk the narrow medieval streets. Museum of Jewish History on Carrer de la Força.' },
+      { type: 'site', name: 'Medieval Walls (Passeig de la Muralla)', coords: [41.9876, 2.8268],
+        address: 'East side of old town', meta: 'Free walk · Panoramic views',
+        notes: 'Walk along the top of the medieval city walls for views over Girona and Catalonia.' },
+      { type: 'restaurant', name: 'Vintages — Lunch', coords: [41.9864, 2.8248],
+        address: 'Carrer de la Cort Reial 15, Old Town', meta: 'Thu Aug 6 lunch · €60–€80/couple',
+        notes: 'Mediterranean — organic produce, mussels, octopus, exceptional wine list. Mon/Thu–Sun · closed Tue/Wed (Aug 6 is Thu — open). Book: vintagesgirona.cat' }
+    ]
+  }
+};
+
+// ============================================================
+// MAP SETUP
+// ============================================================
+const map = L.map('map', {
+  zoomControl: true,
+  scrollWheelZoom: true
+}).setView([40.4168, -3.6988], 14);
+
+L.control.zoom({ position: 'topright' }).remove();
+L.control.zoom({ position: 'bottomright' }).addTo(map);
+map.zoomControl.remove();
+L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+// Tile layer — CartoDB Voyager (clean, elegant)
+L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+  subdomains: 'abcd',
+  maxZoom: 19
+}).addTo(map);
+
+// ============================================================
+// MARKER CREATION
+// ============================================================
+const typeIcons = {
+  hotel: '★',
+  confirmed: '✓',
+  restaurant: '🍴',
+  site: '◆',
+  transit: '⇄',
+  experience: '✦'
+};
+
+function createIcon(type) {
+  return L.divIcon({
+    className: '',
+    html: `<div class="marker-icon marker-${type}"><span>${typeIcons[type]}</span></div>`,
+    iconSize: [32, 32],
+    iconAnchor: [16, 32],
+    popupAnchor: [0, -30]
+  });
+}
+
+function buildPopup(loc) {
+  const tagLabel = {
+    hotel: 'Hotel',
+    confirmed: 'Confirmed Booking',
+    restaurant: 'Restaurant',
+    site: 'Site',
+    transit: 'Transit',
+    experience: 'Experience'
+  }[loc.type];
+
+  const gmapsQ = encodeURIComponent(loc.name + ', ' + loc.address);
+  const gmapsDir = encodeURIComponent(loc.name + ', ' + loc.address);
+
+  return `
+    <div class="popup">
+      <span class="popup-tag tag-${loc.type}">${tagLabel}</span>
+      <h3>${loc.name}</h3>
+      <div class="address">${loc.address}</div>
+      ${loc.meta ? `<div class="meta">${loc.meta}</div>` : ''}
+      ${loc.notes ? `<div class="notes">${loc.notes}</div>` : ''}
+      ${loc.conf ? `<div class="conf-code">${loc.conf}</div>` : ''}
+      <div class="actions">
+        <a class="primary" href="https://www.google.com/maps/search/?api=1&query=${gmapsQ}" target="_blank" rel="noopener">Open in Google Maps</a>
+        <a href="https://www.google.com/maps/dir/?api=1&destination=${gmapsDir}" target="_blank" rel="noopener">Directions</a>
+      </div>
+    </div>
+  `;
+}
+
+// ============================================================
+// CITY RENDERING
+// ============================================================
+let currentMarkers = [];
+let activeFilters = new Set(['hotel','confirmed','restaurant','site','transit','experience']);
+let currentCity = null;
+
+function clearMarkers() {
+  currentMarkers.forEach(m => map.removeLayer(m));
+  currentMarkers = [];
+}
+
+function renderCity(key) {
+  currentCity = key;
+  const city = cities[key];
+  clearMarkers();
+
+  // City info pill
+  document.getElementById('cityInfo').innerHTML = `
+    <div class="name">${city.name}</div>
+    <div class="hotel-line">${city.dates} · ${city.hotel}</div>
+  `;
+
+  // Count by type
+  const counts = { hotel:0, confirmed:0, restaurant:0, site:0, transit:0, experience:0 };
+  city.locations.forEach(l => counts[l.type]++);
+  Object.keys(counts).forEach(t => {
+    const el = document.getElementById('count-' + t);
+    if (el) el.textContent = counts[t];
+  });
+
+  // Markers
+  city.locations.forEach(loc => {
+    if (!activeFilters.has(loc.type)) return;
+    const marker = L.marker(loc.coords, { icon: createIcon(loc.type) })
+      .bindPopup(buildPopup(loc), { maxWidth: 320, className: 'spain-popup' })
+      .addTo(map);
+    currentMarkers.push(marker);
+  });
+
+  // Fit bounds
+  if (currentMarkers.length > 0) {
+    const bounds = L.latLngBounds(currentMarkers.map(m => m.getLatLng()));
+    map.fitBounds(bounds, { padding: [60, 60], maxZoom: city.zoom });
+  } else {
+    map.setView(city.center, city.zoom);
+  }
+
+  // Tab state
+  document.querySelectorAll('.city-tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.city === key);
+  });
+}
+
+// ============================================================
+// CITY TABS
+// ============================================================
+const tabBar = document.getElementById('cityTabs');
+Object.keys(cities).forEach(key => {
+  const city = cities[key];
+  const btn = document.createElement('button');
+  btn.className = 'city-tab';
+  btn.dataset.city = key;
+  btn.innerHTML = `${city.name}<span class="dates">${city.dates}</span>`;
+  btn.addEventListener('click', () => renderCity(key));
+  tabBar.appendChild(btn);
+});
+
+// ============================================================
+// LEGEND FILTERING
+// ============================================================
+document.querySelectorAll('.legend-item').forEach(item => {
+  item.addEventListener('click', () => {
+    const type = item.dataset.type;
+    if (activeFilters.has(type)) {
+      activeFilters.delete(type);
+      item.classList.add('disabled');
+    } else {
+      activeFilters.add(type);
+      item.classList.remove('disabled');
+    }
+    if (currentCity) renderCity(currentCity);
+  });
+});
+
+// ============================================================
+// INITIAL RENDER
+// ============================================================
+// Optional: deep-link via hash (#madrid, #barcelona, etc.)
+const startCity = window.location.hash.replace('#','');
+renderCity(cities[startCity] ? startCity : 'madrid');
+
+window.addEventListener('hashchange', () => {
+  const c = window.location.hash.replace('#','');
+  if (cities[c]) renderCity(c);
+});
+</script>
+
+</body>
+</html>
